@@ -10,4 +10,7 @@ public interface IBuilding
     public Type Type { get; }
 
     public GameObject EntryPoint { get; set; }
+
+    public BuildingData data { get; set; }
+
 }

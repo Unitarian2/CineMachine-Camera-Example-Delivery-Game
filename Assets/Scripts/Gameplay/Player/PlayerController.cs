@@ -17,6 +17,9 @@ public class PlayerController : MonoBehaviour
     Vector3 oldPos;
     Vector3 newPos;
 
+    public int testCount;
+    public int testCountMax;
+
     private IBuilding deliveryStartBuilding;
     private IBuilding deliveryEndBuilding;
 
@@ -29,6 +32,10 @@ public class PlayerController : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
     }
 
+    public void InitPlayerController(GameManager gameManager)
+    {
+        this.gameManager = gameManager;
+    }
     
     public void InitPlayerMapInfo(Grid grid, Unit playerUnit)
     {
@@ -40,7 +47,7 @@ public class PlayerController : MonoBehaviour
     /// Gidilecek baþlangýç ve bitiþ rotasýný oluþturur. newDelivery'de verilen bina tiplerine göre seçimi yapar.
     /// </summary>
     /// <param name="newDelivery"></param>
-    public void SetNewDelivery(DeliveryDestination newDelivery)
+    public void SetNewDelivery(DeliveryDestination newDelivery, UIManager uiManager)
     {
         Debug.LogWarning("Start : " + newDelivery.BuildingStart.BuildingName + " / "+ "End : "+ newDelivery.BuildingEnd.BuildingName);
 
@@ -68,6 +75,8 @@ public class PlayerController : MonoBehaviour
         }
         #endregion
 
+        
+
         //Baþlangýç ve bitiþ baþarýlý bir þekilde bulunduysa hedefleri set ediyoruz. Bu if clause bug durumuna karþýn konuldu.
         if (closestBuildingStart != null && closestBuildingEnd != null)
         {
@@ -75,6 +84,9 @@ public class PlayerController : MonoBehaviour
             Debug.Log("Route Found : "+ closestBuildingStart.GameObject.name + " to "+ closestBuildingEnd.GameObject.name);
             deliveryStartBuilding = closestBuildingStart;
             deliveryEndBuilding = closestBuildingEnd;
+
+            uiManager.NewDeliveryDestinationArrived(new DeliveryDestination(deliveryStartBuilding,deliveryEndBuilding));
+            StartToDeliver();
         }
         else
         {
@@ -86,26 +98,33 @@ public class PlayerController : MonoBehaviour
             BuildingFinder buildingFinderEndAll = new(newDelivery.BuildingEnd, grid.GetAllBuildings());
             deliveryEndBuilding = buildingFinderEndAll.FindSameBuildingsByType().FindClosestBuilding(deliveryStartBuilding.EntryPoint.transform.position);
 
+            
+
             if (closestBuildingStart == null || closestBuildingEnd == null)
             {
                 Debug.LogError("Invalid Route, Starting a New Delivery");
-                GameManager.Instance.StartSingleDelivery(null);
+                gameManager.StartSingleDelivery();
             }
             else
             {
                 Debug.Log("Route Found : " + closestBuildingStart.GameObject.name + " to " + closestBuildingEnd.GameObject.name);
+                uiManager.NewDeliveryDestinationArrived(new DeliveryDestination(deliveryStartBuilding, deliveryEndBuilding));
+                StartToDeliver();
             }
         }
-
     }
 
     /// <summary>
-    /// Player Object rotaya baþlar. Bunu çaðýrmadan önce SetNewDelivery ile rota belirleyin.
+    /// Player Object rotaya baþlar. Bunu çaðýrmadan önce SetNewDelivery ile rota belirleyin. Zaten bir baþlangýç noktasýna gidiyorsa, onu bitirmeden yeni rotaya gitmez.
     /// </summary>
     public void StartToDeliver()
-    {       
-        SetDestination(deliveryStartBuilding);
-        playerDeliveryState = PlayerDeliveryType.MovingToStart;
+    {   
+        if(playerDeliveryState != PlayerDeliveryType.MovingToStart)
+        {  
+            SetDestination(deliveryStartBuilding);
+            playerDeliveryState = PlayerDeliveryType.MovingToStart;
+        }
+        
     }
 
     /// <summary>
@@ -161,7 +180,8 @@ public class PlayerController : MonoBehaviour
                     Debug.Log("End Building'e ulaþýldý!");
                     playerDeliveryState = PlayerDeliveryType.Waiting;
                     //agent.isStopped = true;
-                    GameManager.Instance.StartSingleDelivery(deliveryEndBuilding.Type);
+                    gameManager.DeliveryCompleted(deliveryEndBuilding.Type);
+                    //gameManager.StartSingleDelivery();
                 }
             }
         }

@@ -7,6 +7,7 @@ using UnityEngine;
 public class DeliveryDestinationManager
 {
     private List<IBuilding> uniqueBuildingList;
+    Type typeToAvoid = null;
 
     public DeliveryDestinationManager(List<IBuilding> buildings)
     {
@@ -14,8 +15,14 @@ public class DeliveryDestinationManager
         uniqueBuildingList = buildings.GroupBy(b => b.GetType()).Select(g => g.First()).ToList();
     }
 
-    public DeliveryDestination GetDeliveryDestination(Type typeToAvoid)
+    public void UpdateTypeToAvoid(Type typeToAvoid)
     {
+        this.typeToAvoid = typeToAvoid;
+    }
+
+    public DeliveryDestination GetDeliveryDestination()
+    {
+        
         // Liste içerisinden iki farklý bina tipi seç
         IBuilding buildingStart;
         if (typeToAvoid != null)
@@ -45,6 +52,11 @@ public class DeliveryDestinationManager
     {
         int randomIndex = UnityEngine.Random.Range(0, uniqueBuildingList.Count);
         return uniqueBuildingList[randomIndex];
+    }
+
+    public List<IBuilding> GetUniqueBuildingList()
+    {
+        return uniqueBuildingList;
     }
 
 }
