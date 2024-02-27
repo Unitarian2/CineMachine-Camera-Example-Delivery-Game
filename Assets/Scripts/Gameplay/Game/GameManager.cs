@@ -9,6 +9,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Transform buildingParentObject;
     [SerializeField] private PlayerController playerController;
     [SerializeField] private UIManager uiManager;
+    [SerializeField] private CineCameraManager cameraMan;
 
     DeliveryDestinationManager deliveryDestinationManager;
 
@@ -38,7 +39,7 @@ public class GameManager : Singleton<GameManager>
     {
         deliveryDestinationManager = new DeliveryDestinationManager(buildingList);
         uiManager.InitUIManager(deliveryDestinationManager.GetUniqueBuildingList());
-        playerController.InitPlayerController(this);
+        playerController.InitPlayerController(this, cameraMan);
         uiManager.NewDeliveryRequested += UiManager_NewDeliveryRequested;
     }
 

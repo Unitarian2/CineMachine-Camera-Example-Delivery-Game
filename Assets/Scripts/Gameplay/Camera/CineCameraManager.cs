@@ -10,22 +10,23 @@ public class CineCameraManager : MonoBehaviour
 
     Tween currentDollyAnim;
    
-    public void ToggleTransition()
+    public void ToggleCameraTransition()
     {
         if (CinemachineCore.Instance.IsLive(steadyFarCamera))
         {     
-            steadyFarCamera.enabled = false;
+            
             StartDollies();
         }
         else
         {
             StopDollyProcess();
-            steadyFarCamera.enabled = true;
+            
         }
     }
 
-    void StartDollies()
+    public void StartDollies()
     {
+        steadyFarCamera.enabled = false;
         DisableDollies();
         SingleDollyProcess(0);
     }
@@ -56,7 +57,7 @@ public class CineCameraManager : MonoBehaviour
         });
     }
 
-    void StopDollyProcess()
+    public void StopDollyProcess()
     {
         currentDollyAnim.Kill();
         foreach (var dolly in dollyCameras)
@@ -65,6 +66,7 @@ public class CineCameraManager : MonoBehaviour
         }
 
         DisableDollies();
+        steadyFarCamera.enabled = true;
     }
 
     void DisableDollies()

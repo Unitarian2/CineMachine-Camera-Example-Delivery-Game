@@ -13,28 +13,31 @@ public class PlayerController : MonoBehaviour
     Grid grid;
     Unit playerUnit;
     GameManager gameManager;
+    CineCameraManager cameraMan;
 
     Vector3 oldPos;
     Vector3 newPos;
 
-    public int testCount;
-    public int testCountMax;
+    [SerializeField] private Transform returnPoint;
 
     private IBuilding deliveryStartBuilding;
     private IBuilding deliveryEndBuilding;
 
-    private PlayerDeliveryType playerDeliveryState = PlayerDeliveryType.Waiting;
+    public PlayerDeliveryType playerDeliveryState = PlayerDeliveryType.Waiting;
 
     
 
     private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
+        
     }
 
-    public void InitPlayerController(GameManager gameManager)
+    public void InitPlayerController(GameManager gameManager, CineCameraManager cameraMan)
     {
         this.gameManager = gameManager;
+        this.cameraMan = cameraMan;
+        cameraMan.StartDollies();
     }
     
     public void InitPlayerMapInfo(Grid grid, Unit playerUnit)
@@ -123,6 +126,7 @@ public class PlayerController : MonoBehaviour
         {  
             SetDestination(deliveryStartBuilding);
             playerDeliveryState = PlayerDeliveryType.MovingToStart;
+            cameraMan.StopDollyProcess();
         }
         
     }
@@ -136,7 +140,6 @@ public class PlayerController : MonoBehaviour
         agent.SetDestination(buildingDestination.EntryPoint.transform.position);
     }
 
-    
 
     // Update is called once per frame
     void Update()
@@ -165,26 +168,49 @@ public class PlayerController : MonoBehaviour
     {
         if(playerDeliveryState != PlayerDeliveryType.Waiting)
         {
-            //Debug.Log("Player reached: " + other.gameObject.name);
-            if (other.gameObject.transform.parent.TryGetComponent<IBuilding>(out IBuilding building))
+            if (other.gameObject.layer == LayerMask.NameToLayer("DeliveryPoint"))
             {
-                if (building == deliveryStartBuilding && playerDeliveryState == PlayerDeliveryType.MovingToStart)
+                //Bir Teslimat Noktasýnýn sýnýrlarýna girmiþiz.
+                if (other.gameObject.transform.parent.TryGetComponent<IBuilding>(out IBuilding building))
                 {
-                    Debug.Log("Start Building'e ulaþýldý!");
-                    playerDeliveryState = PlayerDeliveryType.Waiting;
-                    SetDestination(deliveryEndBuilding);
-                    playerDeliveryState = PlayerDeliveryType.MovingToEnd;
-                }
-                else if (building == deliveryEndBuilding && playerDeliveryState == PlayerDeliveryType.MovingToEnd)
-                {
-                    Debug.Log("End Building'e ulaþýldý!");
-                    playerDeliveryState = PlayerDeliveryType.Waiting;
-                    //agent.isStopped = true;
-                    gameManager.DeliveryCompleted(deliveryEndBuilding.Type);
-                    //gameManager.StartSingleDelivery();
+                    if (building == deliveryStartBuilding && playerDeliveryState == PlayerDeliveryType.MovingToStart)
+                    {
+                        Debug.Log("Start Building'e ulaþýldý!");
+                        playerDeliveryState = PlayerDeliveryType.Waiting;
+                        SetDestination(deliveryEndBuilding);
+                        playerDeliveryState = PlayerDeliveryType.MovingToEnd;
+                    }
+                    else if (building == deliveryEndBuilding && playerDeliveryState == PlayerDeliveryType.MovingToEnd)
+                    {
+                        Debug.Log("End Building'e ulaþýldý!");
+                        playerDeliveryState = PlayerDeliveryType.Waiting;
+                        //agent.isStopped = true;
+                        gameManager.DeliveryCompleted(deliveryEndBuilding.Type);
+                        ReturnToStartCenter();
+                        //gameManager.StartSingleDelivery();
+                    }
                 }
             }
+            else if (other.gameObject.layer == LayerMask.NameToLayer("CenterPoint"))
+            {
+
+                if (playerDeliveryState == PlayerDeliveryType.ReturningToCenter)
+                {
+                    //Baþlangýç Noktasýna dönmüþ
+                    playerDeliveryState = PlayerDeliveryType.Waiting;
+                    cameraMan.StartDollies();
+                }
+
+            }
+            
+            
         }
+    }
+
+    void ReturnToStartCenter()
+    {
+        playerDeliveryState = PlayerDeliveryType.ReturningToCenter;
+        agent.SetDestination(returnPoint.position);
     }
    
 }
@@ -193,6 +219,7 @@ public enum PlayerDeliveryType
 {
     Waiting,
     MovingToStart,
-    MovingToEnd
+    MovingToEnd,
+    ReturningToCenter
 }
 
